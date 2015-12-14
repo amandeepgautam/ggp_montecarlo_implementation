@@ -15,15 +15,15 @@ def main():
 
     # Set first player's policy
     # players[0] = RandomPlayer(0)
-    players[0] = AlphaBetaPlayer(gd, sim, 0)
-    #players[0] = MonteCarloPlayer(gd, sim, 0)
+    #players[0] = AlphaBetaPlayer(gd, sim, 0)
+    players[0] = MonteCarloPlayer(gd, sim, 0)
 
     # Make remaining players (if any) random
     for i in xrange(1, gd.numRoles()):
         players[i] = RandomPlayer(i)
 
     for i in xrange(0, gd.numRoles()):
-        players[i].run_simulation(gd.initialState, 2)
+        players[i].run_simulation(gd.initialState, 8)
 
     print("Simulations Complete.")
 
@@ -44,6 +44,9 @@ def main():
             print "  Goals: %s\n" % goals
             p1_goals += goals[0]
             num_matches += 1
+            for j in xrange(0, gd.numRoles()):
+                print("Printing stats for player: " + str(i))
+                players[j].printStats()
         except KeyboardInterrupt:
             print '^C pressed. Shutting down.\n'
             break

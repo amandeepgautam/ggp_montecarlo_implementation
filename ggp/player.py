@@ -69,7 +69,10 @@ class BFSPlayer:
                 node = self.getNext()
                 if node == None: raise Exception('No solution found')
         return self.solution.pop()
-        
+
+    def printStats(self):
+        pass
+
     def processReward(self, rewards):
         pass
 
@@ -121,6 +124,10 @@ class AlphaBetaPlayer:
 	self.search.search(state, self.heuristic, maxDepth=self.maxDepth)
 	return self.move
 
+    def printStats(self):
+        print("No stats implemented yet.")
+        pass
+
     def processReward(self, rewards):
         # Clear out transposition table at end of match
         self.search.tt = None
@@ -160,6 +167,9 @@ class MonteCarloPlayer:
         self.move = legal[self.role][0]
         self.explore.selectMove(state)
 	return self.move
+
+    def printStats(self):
+        self.explore.printStatistics()
 
     def processReward(self, rewards):
         #Clear out transposition table at end of match
