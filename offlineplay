@@ -22,8 +22,10 @@ def main():
     for i in xrange(1, gd.numRoles()):
         players[i] = RandomPlayer(i)
 
+    simulationTime = 3600
+    print("Simulation time:" + str(simulationTime) + " secs")
     for i in xrange(0, gd.numRoles()):
-        players[i].run_simulation(gd.initialState, 8)
+        players[i].run_simulation(gd.initialState, simulationTime)
 
     print("Simulations Complete.")
 
@@ -45,7 +47,7 @@ def main():
             p1_goals += goals[0]
             num_matches += 1
             for j in xrange(0, gd.numRoles()):
-                print("Printing stats for player: " + str(i))
+                print("Printing stats for player: " + str(j))
                 players[j].printStats()
         except KeyboardInterrupt:
             print '^C pressed. Shutting down.\n'

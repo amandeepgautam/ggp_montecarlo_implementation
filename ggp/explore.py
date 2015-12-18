@@ -5,6 +5,8 @@ import random
 from ggp.cache import FIFOCache
 from copy import deepcopy
 
+debug = 0
+
 class ExploreResponse:
     """
     Store the response for the explore action. Add more heuristics if needed later.
@@ -219,18 +221,21 @@ class Explore:
             #There will always be 1 child in this case as no one had a choice 
             #to move. Select that if explored, else return
             if len(node.children) == 0:
-                print("Wierd case: no children" + str(state))
+                if debug == 1:
+                    print("Wierd case: no children" + str(state))
                 return node
             else:
                 childNode = next(iter(node.children))
                 childNode.lastVisitedParent = node
-                print("Wierd case: One children:" + str(state) + "-> "+ str(childNode.state))
+                if debug == 1:
+                    print("Wierd case: One children:" + str(state) + "-> "+ str(childNode.state))
                 return childNode
 
         if len(turnTakers) == 1:
             #explore until all statistics are not available.
             if len(node.unexploredLegalMoves[turnTakers[0]]) != 0:
-                print("Unexplored node. Will begin expansion and simulation" + str(state))
+                if debug == 1:
+                    print("Unexplored node. Will begin expansion and simulation" + str(state))
                 return node
             return self.turnTakingUCBSelection(state, turnTakers[0])
         else:
@@ -244,7 +249,8 @@ class Explore:
         bestChild = None
         node = self.tree.findStateNode(state)
         if self.sim.isTerminal(state):
-            print("Terminal node reached: " + str(state))
+            if debug == 1:
+                print("Terminal node reached: " + str(state))
             return node
 
         if self.role == turnTaker:
@@ -252,7 +258,8 @@ class Explore:
             for child in node.children:
                 reward = (child.avgReward) + \
                         100 * sqrt(2*log(node.allPlayed)/child.allPlayed)
-                print("Bounds: " + str(reward) + " for state: " + str(child.state) + "Node played: " + str(node.allPlayed) + " child played: " + str(child.allPlayed))
+                if debug == 1:
+                    print("Bounds: " + str(reward) + " for state: " + str(child.state) + "Node played: " + str(node.allPlayed) + " child played: " + str(child.allPlayed))
                 if reward > maxReward:
                     bestChild = child
                     maxReward = reward
@@ -264,7 +271,8 @@ class Explore:
                 if reward < minReward:
                     bestChild = child
                     minReward = reward
-        print("Selection : " + str(state) + "->" + str(bestChild.state) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[turnTaker]]))
+        if debug == 1:
+            print("Selection : " + str(state) + "->" + str(bestChild.state) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[turnTaker]]))
         #this node would be the temporary parent of the child for this traversal.
         bestChild.lastVisitedParent = node
         return self.ucbSelection(bestChild.state)
@@ -311,7 +319,8 @@ class Explore:
         # randomly select a node
         # Can implement light heuristics as well to choose nodes.
         if self.sim.isTerminal(state):
-            print("MCExpansion: Reached terminal state")
+            if debug == 1:
+                print("MCExpansion: Reached terminal state")
             return node
 
         nextState, moves = self.findNextUnexploredState(state)
@@ -322,8 +331,9 @@ class Explore:
         if nextNode:
             self.tree.addChildNode(state, nextState, moves)
             nextNode.lastVisitedParent = node
-            print("Early return: " +str(state) + "->" + str(nextState) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[self.role]]))
-            return nextNode
+            if debug == 1:
+                print("Early return: " +str(state) + "->" + str(nextState) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[self.role]]))
+            #return nextNode
 
         if nextState:
             self.tree.addChildNode(state, nextState, moves)
@@ -331,12 +341,14 @@ class Explore:
             nextNode.prepareNode(self.sim, self.gd)   #prepareNode made sense once, but not now.
             self.exploreStats.numStatesVisited += 1
             nextNode.lastVisitedParent = node
-            print("Expansion Printing state: " + str(state) + "->" +str(nextState) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[self.role]]))
+            if debug == 1:
+                print("Expansion Printing state: " + str(state) + "->" +str(nextState) + " out of " + str([str(self.gd.moveTerm(x)) for x in node.unexploredLegalMoves[self.role]]))
         else:
             #The state had no unexplored move. Hence selection proceduce should 
             #be executed followed by expansion and simulation. It can also be 
             #the case that calls are made in reverse order which would be wrong.
-            print("Expansionn of explored node stopped")
+            if debug == 1:
+                print("Expansionn of explored node stopped, " + str(state))
             newNode = self.ucbSelection(state)
             nextState = newNode.state
             #raise ValueError("Call order of functions should be ucbSelecction->mcSimulationAndExpansion")
@@ -352,10 +364,12 @@ class Explore:
                 node.allPlayed += playCount
                 if node.allPlayed == 1:     #incremented before, so 1
                     self.exploreStats.numTerminalStateEvals += 1
-                print("Evaluation state: " + str(state))
+                if debug == 1:
+                    print("Evaluation state: " + str(state))
                 self.exploreStats.numPathsToTerminalNode += 1
                 goals = self.sim.computeGoals(state)
-                print("goals: " + str(goals))
+                if debug == 1:
+                    print("goals: " + str(goals))
                 playoutReward = goals[self.role]
                 node.avgReward = (totalReward + playoutReward)/node.allPlayed
             else:
@@ -363,17 +377,20 @@ class Explore:
         else:
             if level != 0:
                 node.allPlayed += playCount
-                node.avgReward = (totalReward + playoutReward)/node.allPlayed
+                node.avgReward = (totalReward + playoutReward)/float(node.allPlayed)
             else:
-                print("Middle Man: " + str(node.state) + " has reward: " + str(node.avgReward) + " and games at this node: " + str(node.allPlayed) + " and legalmoves " + str(len(node.legalMoves[self.role])) + " and move this time " + str(self.gd.moveTerm(node.lastVisitedParent.whichMove[node.state][self.role])) + "<-")
+                if debug == 1:
+                    print("Middle Man: " + str(node.state) + " has reward: " + str(node.avgReward) + " and games at this node: " + str(node.allPlayed) + " and legalmoves " + str(len(node.legalMoves[self.role])) + " and move this time " + str(self.gd.moveTerm(node.lastVisitedParent.whichMove[node.state][self.role])) + "<-")
                 return self.evaluationAndBackPropagation(node.lastVisitedParent.state, totalReward, node.allPlayed, level+1)
 
         if node.parents:
-            print(str(node.state) + " has reward: " + str(node.avgReward) + " and games at this node: " + str(node.allPlayed) + " and legal moves " + str(len(node.legalMoves[self.role])) + " and move this time " + str(self.gd.moveTerm(node.lastVisitedParent.whichMove[node.state][self.role])) + "<-")
+            if debug == 1:
+                print(str(node.state) + " has reward: " + str(node.avgReward) + " and games at this node: " + str(node.allPlayed) + " and legal moves " + str(len(node.legalMoves[self.role])) + " and move this time " + str(self.gd.moveTerm(node.lastVisitedParent.whichMove[node.state][self.role])) + "<-")
             #for parent in node.parents:
             self.evaluationAndBackPropagation(node.lastVisitedParent.state, playoutReward, playCount, level+1)
         else:
-            print(str(node.state) + " has reward " + str(node.avgReward) + " and legal moves: " + str(len(node.legalMoves[self.role])))
-            print("")
+            if debug == 1:
+                print(str(node.state) + " has reward " + str(node.avgReward) + " and legal moves: " + str(len(node.legalMoves[self.role])))
+                print("")
             pass
             #print(os.linesep)

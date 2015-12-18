@@ -17,6 +17,9 @@ class RandomPlayer:
     def processReward(self, rewards):
         pass
 
+    def printStats(self):
+        pass
+
 class BFSPlayer:
     """
     Breadth-first search player for 
@@ -125,7 +128,6 @@ class AlphaBetaPlayer:
 	return self.move
 
     def printStats(self):
-        print("No stats implemented yet.")
         pass
 
     def processReward(self, rewards):
